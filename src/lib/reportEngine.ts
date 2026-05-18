@@ -1,64 +1,177 @@
+import { prisma } from '@/lib/prisma';
+
 const rawKeys = process.env.AI_API_KEYS || "";
 const API_KEYS = rawKeys.split(",").map(key => key.trim()).filter(Boolean);
 
-if (API_KEYS.length === 0) {
-  console.warn("PERINGATAN: AI_API_KEYS kosong, menggunakan fallback statis.");
+// ---------- STATIC FALLBACK (per bab, berdasarkan bahasa dan tier) ----------
+const staticChapters = {
+  en: [
+    {
+      title: "Chapter 1: Authentic Character Blueprint",
+      content: `<p>Your dominant archetype is the <strong>Visionary Strategist</strong>. You see patterns others miss and are driven by a hunger for meaning. Your fatal flaw is over-idealism: you often expect others to operate at your level of integrity. Lucky colors: Deep Navy & Gold. Power number: 7.</p>`
+    },
+    {
+      title: "Chapter 2: 5-Year Financial Map",
+      content: `<p>Your wealth window opens in years 2-3, peaking at age 31-33. Best sectors: AI ethics, education technology, sustainable energy. Avoid leveraged speculation. Save 30% of windfalls. Lucky numbers: 4, 11, 22. Your financial guardian is your ability to connect abstract ideas to human needs.</p>`
+    },
+    {
+      title: "Chapter 3: Soulmate & Relationship Secrets",
+      content: `<p>Highest compatibility: individuals with life path 7, 9, or 11. They will calm your restless mind. Danger zones: partners who dismiss your need for solitude. Thursday evenings are your strongest bonding window. Colors to wear on dates: soft grey & teal.</p>`
+    },
+    {
+      title: "Chapter 4: Life Danger Warnings",
+      content: `<p>Your biggest trap is trusting charisma over evidence. Never enter verbal agreements; document everything. Risky months: March & October. Physical warning signs: sharp headaches before major betrayals. Avoid any investment promising "quick, guaranteed returns" – they are your kryptonite.</p>`
+    },
+    {
+      title: "Chapter 5: Success Execution Strategy",
+      content: `<p>For 30 days: (1) Wake 40 min earlier and write one page of raw thought – this unblocks your subconscious genius. (2) Cut one toxic relationship, even if it's just emotional distance. (3) Learn one monetizable skill via deep practice (4 hours/week). Your mantra: "Depth over distraction."</p>`
+    }
+  ],
+  es: [
+    {
+      title: "Capítulo 1: Plano del Carácter Auténtico",
+      content: `<p>Tu arquetipo dominante es el <strong>Estratega Visionario</strong>. Ves patrones ocultos y te impulsa una necesidad de significado. Tu punto débil: el idealismo excesivo. Colores de suerte: Azul Marino y Dorado. Número de poder: 7.</p>`
+    },
+    {
+      title: "Capítulo 2: Mapa Financiero a 5 Años",
+      content: `<p>Tu ventana de riqueza se abre en los años 2-3, con pico a los 31-33 años. Sectores ideales: tecnología ética, educación digital. Evita la especulación. Ahorra el 30% de ingresos inesperados. Números de suerte: 4, 11, 22.</p>`
+    },
+    {
+      title: "Capítulo 3: Secretos de Pareja",
+      content: `<p>Compatibilidad máxima: caminos de vida 7, 9 o 11. Calma tu mente inquieta. Riesgo: parejas que no respetan tu necesidad de soledad. Ventana de conexión: jueves al atardecer. Colores para citas: gris suave y verde azulado.</p>`
+    },
+    {
+      title: "Capítulo 4: Advertencias de Peligro",
+      content: `<p>Tu mayor trampa es confiar en el carisma sin evidencia. Nunca acuerdos verbales; documento todo. Meses riesgosos: marzo y octubre. Señal física: dolores de cabeza agudos antes de traiciones. Evita inversiones con promesas "rápidas y garantizadas".</p>`
+    },
+    {
+      title: "Capítulo 5: Estrategia de Éxito",
+      content: `<p>Durante 30 días: (1) Levántate 40 min antes y escribe una página de pensamiento en bruto. (2) Corta una relación tóxica. (3) Aprende una habilidad monetizable con práctica profunda. Mantra: "Profundidad sobre distracción".</p>`
+    }
+  ],
+  id: [
+    {
+      title: "Bab 1: Blueprint Karakter Asli",
+      content: `<p>Arketipe dominan Anda adalah <strong>Sang Visioner Strategis</strong>. Anda melihat pola yang terlewat orang lain dan digerakkan oleh dahaga makna. Kelemahan fatal: terlalu idealis dan mengharapkan orang lain sejujur Anda. Warna keberuntungan: Biru Dongker & Emas. Angka kekuatan: 7.</p>`
+    },
+    {
+      title: "Bab 2: Peta Keuangan 5 Tahun",
+      content: `<p>Jendela rezeki terbuka di tahun ke-2 hingga 3, puncak pada usia 31-33. Sektor terbaik: teknologi etis, pendidikan digital, energi berkelanjutan. Hindari spekulasi. Simpan 30% dana tak terduga. Angka hoki: 4, 11, 22.</p>`
+    },
+    {
+      title: "Bab 3: Rahasia Jodoh & Hubungan",
+      content: `<p>Kecocokan tertinggi: mereka dengan angka kehidupan 7, 9, atau 11. Mereka mampu menenangkan pikiran Anda yang tak pernah berhenti. Zona bahaya: pasangan yang meremehkan kebutuhan Anda akan kesendirian. Momen bonding terkuat: Kamis petang. Warna saat kencan: abu-abu lembut & teal.</p>`
+    },
+    {
+      title: "Bab 4: Peringatan Bahaya Hidup",
+      content: `<p>Jebakan terbesar: memercayai karisma tanpa bukti. Jangan pernah buat perjanjian lisan; catat semuanya. Bulan rawan: Maret & Oktober. Tanda fisik: sakit kepala tajam sebelum pengkhianatan besar. Hindari investasi berjanji "cepat dan pasti untung" – itu racun Anda.</p>`
+    },
+    {
+      title: "Bab 5: Strategi Sukses Eksekusi",
+      content: `<p>Selama 30 hari: (1) Bangun 40 menit lebih awal dan tulis satu halaman pikiran mentah – ini membuka genius bawah sadar. (2) Putuskan satu hubungan beracun, walau hanya jarak emosional. (3) Pelajari satu skill menghasilkan melalui latihan mendalam 4 jam/minggu. Mantra: "Kedalaman di atas gangguan."</p>`
+    }
+  ]
+};
+
+function getStaticChapters(lang: string): { title: string; content: string }[] {
+  if (lang === 'en') return staticChapters.en;
+  if (lang === 'es') return staticChapters.es;
+  return staticChapters.id;
 }
 
-// Fallback statis disesuaikan dengan tier agar tidak membocorkan 5 bab untuk paket basic
-function generateStaticReport(userName: string, toolName: string, lang: string, resultId: string, tier: string): string {
-  const isEn = lang === "en";
-  const isEs = lang === "es";
+// ---------- PROMPT AI TERCANGGIH, PADAT, DAN BERDAMPAK ----------
+function buildPrompt(
+  chapterTitle: string,
+  chapterDesc: string,
+  lang: string,
+  userName: string,
+  toolName: string,
+  resultId: string
+): string {
+  const resultContext = resultId !== "Unknown"
+    ? (lang === "en" ? `The user's specific test result is: ${resultId}. Your analysis must be directly anchored to this result.` :
+       lang === "es" ? `El resultado de la prueba es: ${resultId}. Ancla tu análisis directamente en este resultado.` :
+       `Hasil tes spesifik pengguna: ${resultId}. Analisis Anda harus berakar kuat pada hasil ini.`)
+    : "";
 
-  const allStaticChapters = [
-    {
-      title: isEn ? "Chapter 1: Authentic Character Blueprint" : isEs ? "Capítulo 1: Plan de Carácter Auténtico" : "Bab 1: Blueprint Karakter Asli",
-      content: isEn
-        ? `<p>Based on your name, <strong>${userName}</strong>, and result <strong>${resultId}</strong>, your dominant personality archetype is strong. You see the big picture before others. Weakness: too idealistic. Lucky colors: Dark Blue & Gold.</p>`
-        : isEs
-        ? `<p>Según su nombre, <strong>${userName}</strong>, y resultado <strong>${resultId}</strong>, su arquetipo es fuerte. Ve el panorama general antes que otros. Debilidad: demasiado idealista. Colores de la suerte: Azul Marino y Oro.</p>`
-        : `<p>Berdasarkan nama Anda, <strong>${userName}</strong>, dan hasil tes <strong>${resultId}</strong>, arketipe kepribadian Anda sangat kuat. Anda melihat gambaran besar. Kelemahan: terlalu idealis. Warna keberuntungan: Biru Dongker & Emas.</p>`,
-    },
-    {
-      title: isEn ? "Chapter 2: Basic Financial Map" : isEs ? "Capítulo 2: Mapa Financiero Básico" : "Bab 2: Peta Keuangan Dasar",
-      content: isEn
-        ? `<p>You will reach a financial peak in year 3. Best sectors: technology, education. Avoid speculation. Save 20% for emergency. Lucky numbers: 7, 12, 33.</p>`
-        : isEs
-        ? `<p>Alcanzará un pico financiero en el año 3. Mejores sectores: tecnología, educación. Evite especulaciones. Ahorre el 20% para emergencias. Números de la suerte: 7, 12, 33.</p>`
-        : `<p>Anda akan mencapai puncak keuangan di tahun ke-3. Sektor terbaik: teknologi, pendidikan. Hindari spekulasi. Simpan 20% untuk darurat. Angka keberuntungan: 7, 12, 33.</p>`,
-    },
-    {
-      title: isEn ? "Chapter 3: Soulmate & Relationship Secrets" : isEs ? "Capítulo 3: Secretos de Pareja y Relaciones" : "Bab 3: Rahasia Jodoh & Hubungan",
-      content: isEn
-        ? `<p>Best match: weton neptu 9, 14, or 17. Improve communication on Thursdays & Saturdays. Lucky colors: Pink & White.</p>`
-        : isEs
-        ? `<p>Mejor compatibilidad: neptu weton 9, 14 o 17. Mejore la comunicación los jueves y sábados. Colores de la suerte: Rosa y Blanco.</p>`
-        : `<p>Kecocokan terbaik: neptu weton 9, 14, atau 17. Tingkatkan komunikasi di hari Kamis & Sabtu. Warna keberuntungan: Pink & Putih.</p>`,
-    },
-    {
-      title: isEn ? "Chapter 4: Life Danger Warnings" : isEs ? "Capítulo 4: Advertencias de Peligro Vital" : "Bab 4: Peringatan Bahaya Hidup",
-      content: isEn
-        ? `<p>Avoid trusting new people too fast. Never partner without written contract. Risky months: March & October.</p>`
-        : isEs
-        ? `<p>Evite confiar demasiado rápido en gente nueva. Nunca se asocie sin contrato escrito. Meses de riesgo: marzo y octubre.</p>`
-        : `<p>Jangan terlalu cepat percaya pada orang baru. Hindari kerjasama tanpa kontrak tertulis. Bulan berisiko: Maret & Oktober.</p>`,
-    },
-    {
-      title: isEn ? "Chapter 5: Success Execution Strategy" : isEs ? "Capítulo 5: Estrategia de Éxito" : "Bab 5: Strategi Sukses Eksekusi",
-      content: isEn
-        ? `<p>Starting tomorrow: (1) Wake 30 min earlier, (2) Limit social media, (3) Learn a new skill monthly.</p>`
-        : isEs
-        ? `<p>A partir de mañana: (1) Levántese 30 min antes, (2) Limite redes sociales, (3) Aprenda una habilidad nueva cada mes.</p>`
-        : `<p>Mulai besok: (1) Bangun 30 menit lebih awal, (2) Batasi media sosial, (3) Belajar skill baru tiap bulan.</p>`,
-    },
-  ];
+  const toneInstruction = lang === "en"
+    ? `Write as an elite metaphysical psychologist. Every sentence must deliver a surprising, actionable insight. NO filler, NO "based on your name", NO generic life advice. Be razor-sharp, even controversial if true. Output pure HTML: only <h3> for the title and <p> for paragraphs. Use <strong> for key phrases. Strictly 180-250 words.`
+    : lang === "es"
+    ? `Escribe como psicólogo metafísico de élite. Cada oración debe entregar una visión sorprendente y accionable. SIN relleno, SIN "basado en tu nombre", SIN consejos genéricos. Sé filoso, incluso controversial si es verdad. HTML puro: solo <h3> para el título y <p>. Usa <strong> para frases clave. Estrictamente 180-250 palabras.`
+    : `Tulislah sebagai psikolog metafisika elit. Setiap kalimat harus memberikan insight mengejutkan dan langsung bisa dieksekusi. TANPA basa-basi, TANPA "berdasarkan nama Anda", TANPA nasihat generik. Tajam, bahkan kontroversial jika memang benar. Output HTML murni: hanya <h3> untuk judul dan <p>. Gunakan <strong> untuk frasa kunci. Ketat 180-250 kata.`;
 
-  // PEMOTONGAN TIER UNTUK FALLBACK
-  const targetChapters = tier === "basic" ? allStaticChapters.slice(0, 2) : allStaticChapters;
-
-  return targetChapters.map(ch => `<h3>${ch.title}</h3>${ch.content}`).join("");
+  if (lang === "en") {
+    return `You are an elite metaphysical psychologist writing for a premium paid report. User: ${userName}, Tool: ${toolName}. ${resultContext}
+Focus chapter: "${chapterTitle}". ${toneInstruction}
+Start directly with <h3>${chapterTitle}</h3> followed by your razor-sharp analysis.`;
+  } else if (lang === "es") {
+    return `Eres un psicólogo metafísico de élite redactando un informe premium pagado. Usuario: ${userName}, Herramienta: ${toolName}. ${resultContext}
+Enfoque: "${chapterTitle}". ${toneInstruction}
+Comienza directamente con <h3>${chapterTitle}</h3> seguido de tu análisis filoso.`;
+  } else {
+    return `Anda adalah psikolog metafisika elit yang menulis laporan premium berbayar. Pengguna: ${userName}, Alat: ${toolName}. ${resultContext}
+Fokus bab: "${chapterTitle}". ${toneInstruction}
+Mulai langsung dengan <h3>${chapterTitle}</h3> diikuti analisis tajam Anda.`;
+  }
 }
 
+// ---------- FETCH DENGAN RETRY & ROTASI KUNCI (PARALEL-READY) ----------
+async function fetchChapterWithRetry(
+  chapterIndex: number,
+  totalChapters: number,
+  chapterTitle: string,
+  chapterDesc: string,
+  lang: string,
+  userName: string,
+  toolName: string,
+  resultId: string
+): Promise<string | null> {
+  if (API_KEYS.length === 0) return null;
+
+  let attempt = 0;
+  const maxRetries = 5;
+  // Rotasi kunci berdasarkan chapter index + attempt
+  while (attempt < maxRetries) {
+    const keyIndex = (chapterIndex + attempt) % API_KEYS.length;
+    const apiKey = API_KEYS[keyIndex];
+    const prompt = buildPrompt(chapterTitle, chapterDesc, lang, userName, toolName, resultId);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+      const data = await response.json();
+
+      if (data.error) {
+        const msg = data.error.message || "";
+        if (msg.includes("high demand") || msg.includes("quota") || msg.includes("rate")) {
+          attempt++;
+          await new Promise(r => setTimeout(r, 2000)); // tunggu 2 detik sebelum retry
+          continue;
+        }
+        return null;
+      }
+
+      let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        rawText = rawText.replace(/```html/gi, "").replace(/```/gi, "").replace(/style="[^"]*"/gi, "").trim();
+        return rawText;
+      }
+      return null;
+    } catch (e) {
+      attempt++;
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  return null;
+}
+
+// ---------- FUNGSI UTAMA (PARALEL, TIERING, FALLBACK) ----------
 export async function generatePremiumReport(
   userName: string,
   toolName: string,
@@ -66,119 +179,55 @@ export async function generatePremiumReport(
   resultId: string = "Unknown",
   tier: string = "premium"
 ) {
-  const fetchChapterWithRetry = async (
-    chapterTitle: string,
-    promptInstruction: string,
-    startIndex: number
-  ): Promise<string | null> => {
-    if (API_KEYS.length === 0) return null;
-
-    const maxRetries = 5;
-    let attempt = 0;
-
-    while (attempt < maxRetries) {
-      const keyIndex = (startIndex + attempt) % API_KEYS.length;
-      const apiKey = API_KEYS[keyIndex];
-
-      // SUNTIKAN RESULT ID KE DALAM PROMPT AGAR AI MENJAWAB SESUAI HASIL TES
-      const resultContextEn = resultId !== "Unknown" ? `The user's specific test result is: ${resultId}. You MUST heavily base your analysis on this result.` : "";
-      const resultContextEs = resultId !== "Unknown" ? `El resultado específico de la prueba del usuario es: ${resultId}. DEBES basar fuertemente tu análisis en este resultado.` : "";
-      const resultContextId = resultId !== "Unknown" ? `Hasil tes spesifik pengguna adalah: ${resultId}. Anda WAJIB mendasarkan analisis Anda secara kuat pada hasil ini.` : "";
-
-      let prompt = "";
-      if (lang === "en") {
-        prompt = `Act as a Metaphysics Expert and Clinical Psychologist. Write a premium editorial report for ${userName} using ${toolName}. ${resultContextEn} Focus: ${chapterTitle}. Instructions: ${promptInstruction}. Output pure HTML (only <h3>, <p>, <ul>, <li>, <strong>). No markdown, no styles. Start with <h3>${chapterTitle}</h3>. Write 250-350 words.`;
-      } else if (lang === "es") {
-        prompt = `Actúa como Experto en Metafísica y Psicólogo Clínico. Escribe un informe editorial premium para ${userName} usando ${toolName}. ${resultContextEs} Enfoque: ${chapterTitle}. Instrucciones: ${promptInstruction}. Salida HTML puro (solo <h3>, <p>, <ul>, <li>, <strong>). Sin markdown, sin estilos. Comienza con <h3>${chapterTitle}</h3>. Escribe 250-350 palabras.`;
-      } else {
-        prompt = `Bertindak sebagai Pakar Metafisika dan Psikolog Klinis. Tulis laporan editorial premium untuk ${userName} menggunakan ${toolName}. ${resultContextId} Fokus: ${chapterTitle}. Instruksi: ${promptInstruction}. Keluaran HTML murni (hanya <h3>, <p>, <ul>, <li>, <strong>). Tanpa markdown, tanpa gaya. Mulai dengan <h3>${chapterTitle}</h3>. Tulis 250-350 kata.`;
-      }
-
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-          }
-        );
-        const data = await response.json();
-
-        if (data.error) {
-          if (
-            data.error.message.includes("high demand") ||
-            data.error.message.includes("quota") ||
-            data.error.message.includes("rate")
-          ) {
-            attempt++;
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            continue;
-          }
-          return null;
-        }
-
-        let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-        if (rawText) {
-          rawText = rawText.replace(/```html/gi, "").replace(/```/gi, "").replace(/style="[^"]*"/gi, "").trim();
-          return rawText;
-        }
-        return null;
-      } catch {
-        attempt++;
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
-    }
-    return null;
-  };
-
+  // Definisi bab (judul + deskripsi untuk prompt)
   const allChapters = [
-    {
-      title: lang === "en" ? "Chapter 1: Authentic Character Blueprint" : lang === "es" ? "Capítulo 1: Plan de Carácter Auténtico" : "Bab 1: Blueprint Karakter Asli",
-      desc: lang === "en" ? "Hidden character and mental analysis." : lang === "es" ? "Análisis de carácter y mental ocultos." : "Analisis karakter dan mental yang tersembunyi.",
+    { 
+      title: lang === "en" ? "Chapter 1: Authentic Character Blueprint" : lang === "es" ? "Capítulo 1: Plano del Carácter Auténtico" : "Bab 1: Blueprint Karakter Asli",
+      desc: lang === "en" ? "Deep personality architecture and hidden strengths/weaknesses." : lang === "es" ? "Arquitectura profunda de personalidad y fortalezas/debilidades ocultas." : "Arsitektur kepribadian mendalam serta kekuatan/kelemahan tersembunyi."
     },
-    {
+    { 
       title: lang === "en" ? "Chapter 2: 5-Year Financial Map" : lang === "es" ? "Capítulo 2: Mapa Financiero a 5 Años" : "Bab 2: Peta Keuangan 5 Tahun",
-      desc: lang === "en" ? "Wealth prediction, suitable career, rich momentum." : lang === "es" ? "Predicción de riqueza, carrera adecuada, momento de riqueza." : "Prediksi rejeki, karir yang cocok, dan momentum kaya.",
+      desc: lang === "en" ? "Wealth trajectory, best sectors, and timing." : lang === "es" ? "Trayectoria de riqueza, mejores sectores y sincronización." : "Lintasan rezeki, sektor terbaik, dan momentum."
     },
-    {
+    { 
       title: lang === "en" ? "Chapter 3: Soulmate & Relationship Secrets" : lang === "es" ? "Capítulo 3: Secretos de Pareja y Relaciones" : "Bab 3: Rahasia Jodoh & Hubungan",
-      desc: lang === "en" ? "Lucky and unlucky partner types." : lang === "es" ? "Tipos de pareja de buena y mala suerte." : "Tipe pasangan pembawa hoki dan pembawa sial.",
+      desc: lang === "en" ? "Compatibility signatures and relational traps." : lang === "es" ? "Firmas de compatibilidad y trampas relacionales." : "Pola kecocokan dan jebakan hubungan."
     },
-    {
+    { 
       title: lang === "en" ? "Chapter 4: Life Danger Warnings" : lang === "es" ? "Capítulo 4: Advertencias de Peligro Vital" : "Bab 4: Peringatan Bahaya Hidup",
-      desc: lang === "en" ? "Fatal mistakes and taboos to avoid." : lang === "es" ? "Errores fatales y tabúes a evitar." : "Kesalahan fatal dan pantangan yang harus dijauhi.",
+      desc: lang === "en" ? "Fatal mistakes, taboos, and danger months." : lang === "es" ? "Errores fatales, tabúes y meses de peligro." : "Kesalahan fatal, pantangan, dan bulan rawan."
     },
-    {
+    { 
       title: lang === "en" ? "Chapter 5: Success Execution Strategy" : lang === "es" ? "Capítulo 5: Estrategia de Éxito" : "Bab 5: Strategi Sukses Eksekusi",
-      desc: lang === "en" ? "Concrete steps starting tomorrow morning." : lang === "es" ? "Pasos concretos a partir de mañana." : "Langkah pasti mulai besok pagi.",
-    },
+      desc: lang === "en" ? "Concrete morning routine and 30-day transformation." : lang === "es" ? "Rutina matutina concreta y transformación en 30 días." : "Rutin pagi konkret dan transformasi 30 hari."
+    }
   ];
 
-  // LOGIKA TIERING: Potong proses API sebesar 60% jika paket Basic
+  // Potong berdasarkan tier (basic = 2 bab)
   const targetChapters = tier === "basic" ? allChapters.slice(0, 2) : allChapters;
 
-  const aiResults: (string | null)[] = [];
+  // PANGGIL SEMUA BAB SECARA PARALEL
+  const aiResults = await Promise.all(
+    targetChapters.map((ch, i) =>
+      fetchChapterWithRetry(i, targetChapters.length, ch.title, ch.desc, lang, userName, toolName, resultId)
+    )
+  );
 
-  for (let i = 0; i < targetChapters.length; i++) {
-    const result = await fetchChapterWithRetry(targetChapters[i].title, targetChapters[i].desc, i);
-    aiResults.push(result);
-    // Beri jeda antar pemanggilan agar tidak terkena Rate Limit Gemini
-    if (i < targetChapters.length - 1) await new Promise((resolve) => setTimeout(resolve, 1500));
-  }
+  // Ambil konten statis sebagai fallback per bab (sesuai bahasa)
+  const staticChaptersList = getStaticChapters(lang);
+  // Potong static sesuai tier juga
+  const targetStatic = tier === "basic" ? staticChaptersList.slice(0, 2) : staticChaptersList;
 
-  const allFailed = aiResults.every((r) => r === null);
-  if (allFailed) {
-    console.warn("All AI calls failed, using static fallback.");
-    return generateStaticReport(userName, toolName, lang, resultId, tier);
-  }
-
-  const staticFull = generateStaticReport(userName, toolName, lang, resultId, tier);
-  const staticParts = staticFull.split("<h3>").slice(1).map((part) => "<h3>" + part);
-
-  const finalChapters = targetChapters.map((ch, idx) => {
-    if (aiResults[idx]) return aiResults[idx]!;
-    return idx < staticParts.length ? staticParts[idx] : `<h3>${ch.title}</h3><p>${lang === "en" ? "Temporary report could not be generated. Use your intuition." : lang === "es" ? "No se pudo generar el informe temporal. Usa tu intuición." : "Laporan sementara tidak dapat dihasilkan. Gunakan intuisi Anda."}</p>`;
+  // Gabungkan: jika AI sukses pakai AI, jika tidak pakai static chapter yang sesuai
+  const finalChapters = targetChapters.map((ch, i) => {
+    if (aiResults[i]) return aiResults[i]!;
+    // Fallback: gunakan konten statis untuk bab ini (indeks sama)
+    const fallback = targetStatic[i];
+    if (fallback) {
+      return `<h3>${fallback.title}</h3>${fallback.content}`;
+    }
+    // Jika tidak ada, berikan placeholder (seharusnya tidak terjadi)
+    return `<h3>${ch.title}</h3><p>${lang === "en" ? "Insight temporarily unavailable." : lang === "es" ? "Información no disponible temporalmente." : "Wawasan sementara tidak tersedia."}</p>`;
   });
 
   return finalChapters.join("");
