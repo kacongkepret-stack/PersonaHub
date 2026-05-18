@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const DOMAIN = "https://personahub.com"; // GANTI DENGAN DOMAIN ASLI ANDA NANTI
+const DOMAIN = "https://personahub.net"; // GANTI DENGAN DOMAIN ASLI ANDA NANTI
 const LANGUAGES = ['id', 'en', 'es'];
 
 // Daftar rute statis utama
