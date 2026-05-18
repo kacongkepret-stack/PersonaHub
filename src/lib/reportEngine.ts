@@ -1,5 +1,3 @@
-import { prisma } from '@/lib/prisma';
-
 const rawKeys = process.env.AI_API_KEYS || "";
 const API_KEYS = rawKeys.split(",").map(key => key.trim()).filter(Boolean);
 
