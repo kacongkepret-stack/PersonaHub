@@ -97,6 +97,16 @@ export default function LanguageLayout({
           strategy="beforeInteractive"
         />
 
+        {/* 🟢 TAMBAHKAN SCRIPT MONETAG DI SINI */}
+        {/* Menggunakan strategy afterInteractive agar tidak memperlambat loading utama web */}
+        <Script
+          id="monetag-tag-11021612"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(s){s.dataset.zone='11021612',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
+          }}
+        />
+
         {/* NAVBAR */}
         <header className="bg-slate-950/80 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
