@@ -167,12 +167,9 @@ async function fetchChapterWithRetry(
         body: JSON.stringify({
           model: "llama-3.1-8b-instant", // model gratis Groq
           messages: [
-  { 
-    role: "system", 
-    content: "Anda adalah psikolog metafisika tajam. Setiap respons adalah diagnosis dingin yang mengejutkan, TANPA basa‑basi, TANPA motivasi. Langsung tunjuk konflik tersembunyi atau prediksi mengejutkan." 
-  },
-  { role: "user", content: prompt }
-]
+            { role: "system", content: "Anda adalah psikolog metafisika tajam yang tidak pernah basa-basi. Setiap respons adalah diagnosis dingin yang mengejutkan." },
+            { role: "user", content: prompt }
+          ],
           temperature: 0.95,
           max_tokens: 600
         })
