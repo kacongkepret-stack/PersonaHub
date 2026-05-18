@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-// Asumsi Anda menggunakan Prisma di PersonaHub. Sesuaikan path import-nya jika berbeda.
-import { prisma } from '@/lib/prisma'; 
+// Asumsi Anda menggunakan Prisma di PersonaHub. Sesuaikan path import-nya jika berbeda. 
 
 export async function POST(req: Request) {
   let payload: any;
