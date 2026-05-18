@@ -3,4 +3,4 @@ Allow: /
 Disallow: /api/
 Disallow: /_next/
 
-Sitemap: https://personahub.com/sitemap.xml
+Sitemap: https://personahub.net/sitemap.xml
