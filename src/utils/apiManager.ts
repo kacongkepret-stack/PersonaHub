@@ -41,3 +41,5 @@ class ApiKeyManager {
 // Inisialisasi Singleton agar state rotasi (currentIndex) bertahan lintas request di memori Node.js
 const apiKeysEnv = process.env.AI_API_KEYS;
 export const aiKeyManager = new ApiKeyManager(apiKeysEnv);
+
+export default aiKeyManager;
