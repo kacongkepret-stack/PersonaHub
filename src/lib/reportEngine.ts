@@ -1,7 +1,6 @@
 // src/lib/reportEngine.ts
-// Tidak ada import prisma karena tidak digunakan
 
-const rawKeys = process.env.AI_API_KEYS || "";
+const rawKeys = process.env.GROQ_API_KEY || "";
 const API_KEYS = rawKeys.split(",").map(key => key.trim()).filter(Boolean);
 
 // ---------- STATIC FALLBACK (dengan placeholder {userName} dan {resultId}) ----------
@@ -74,7 +73,6 @@ const staticChapters = {
   ]
 };
 
-// ---------- FUNGSI PENGAMBIL STATIC DENGAN PERSONALISASI ----------
 function getStaticChapters(lang: string, userName: string, resultId: string): { title: string; content: string }[] {
   const source = staticChapters[lang as keyof typeof staticChapters] || staticChapters.id;
   return source.map(ch => ({
@@ -121,7 +119,7 @@ Mulai langsung dengan <h3>${chapterTitle}</h3> diikuti analisis tajam Anda.`;
   }
 }
 
-// ---------- FETCH DENGAN RETRY & ROTASI KUNCI (PARALEL) ----------
+// ---------- FETCH DENGAN RETRY & ROTASI KUNCI (GROQ) ----------
 async function fetchChapterWithRetry(
   chapterIndex: number,
   totalChapters: number,
@@ -142,19 +140,27 @@ async function fetchChapterWithRetry(
     const prompt = buildPrompt(chapterTitle, chapterDesc, lang, userName, toolName, resultId);
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        }
-      );
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile", // model gratis Groq
+          messages: [
+            { role: "system", content: "You are a helpful metaphysical psychologist. Output raw HTML as instructed." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 600
+        })
+      });
       const data = await response.json();
 
       if (data.error) {
         const msg = data.error.message || "";
-        if (msg.includes("high demand") || msg.includes("quota") || msg.includes("rate")) {
+        if (msg.includes("rate_limit") || msg.includes("quota")) {
           attempt++;
           await new Promise(r => setTimeout(r, 2000));
           continue;
@@ -162,7 +168,7 @@ async function fetchChapterWithRetry(
         return null;
       }
 
-      let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      let rawText = data.choices?.[0]?.message?.content;
       if (rawText) {
         rawText = rawText.replace(/```html/gi, "").replace(/```/gi, "").replace(/style="[^"]*"/gi, "").trim();
         return rawText;
@@ -184,7 +190,6 @@ export async function generatePremiumReport(
   resultId: string = "Unknown",
   tier: string = "premium"
 ): Promise<string> {
-  // Definisi bab
   const allChapters = [
     { 
       title: lang === "en" ? "Chapter 1: Authentic Character Blueprint" : lang === "es" ? "Capítulo 1: Plano del Carácter Auténtico" : "Bab 1: Blueprint Karakter Asli",
@@ -208,21 +213,17 @@ export async function generatePremiumReport(
     }
   ];
 
-  // Potong berdasarkan tier (basic = 2 bab)
   const targetChapters = tier === "basic" ? allChapters.slice(0, 2) : allChapters;
 
-  // PANGGIL SEMUA BAB SECARA PARALEL
   const aiResults = await Promise.all(
     targetChapters.map((ch, i) =>
       fetchChapterWithRetry(i, targetChapters.length, ch.title, ch.desc, lang, userName, toolName, resultId)
     )
   );
 
-  // Ambil konten statis yang sudah dipersonalisasi
   const staticChaptersList = getStaticChapters(lang, userName, resultId);
   const targetStatic = tier === "basic" ? staticChaptersList.slice(0, 2) : staticChaptersList;
 
-  // Gabungkan: AI sukses -> pakai AI, gagal -> pakai static yang sudah ada nama
   const finalChapters = targetChapters.map((ch, i) => {
     if (aiResults[i]) return aiResults[i];
     const fallback = targetStatic[i];
