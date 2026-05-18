@@ -92,7 +92,7 @@ export default function LanguageLayout({
         {/* ========== INJEKSI SCRIPT MIDTRANS GLOBAL ========== */}
         {/* Memastikan Snap berjalan independen dari siklus re-render React */}
         <Script
-          src="https://app.sandbox.midtrans.com/snap/snap.js"
+          src="https://app.midtrans.com/snap/snap.js"
           data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
           strategy="beforeInteractive"
         />
