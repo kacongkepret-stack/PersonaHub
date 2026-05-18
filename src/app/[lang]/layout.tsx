@@ -107,6 +107,27 @@ export default function LanguageLayout({
           }}
         />
 
+        {/* ========== GOOGLE ANALYTICS ========== */}
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=G-SGKMGNHHFW`}
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-SGKMGNHHFW', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
+        {/* ====================================== */}
+
         {/* NAVBAR */}
         <header className="bg-slate-950/80 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
