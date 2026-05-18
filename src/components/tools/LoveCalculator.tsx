@@ -113,6 +113,8 @@ interface LoveResult {
   numer2: number;
   heart1: number;
   heart2: number;
+  n1?: string;
+  n2?: string;
   personality1: number;
   personality2: number;
 }
