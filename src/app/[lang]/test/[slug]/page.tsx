@@ -9,7 +9,7 @@ interface TestData {
   title: string;
   description: string;
   timeEstimation: string;
-  questions?: any[];
+  questions: any[];
   scoringType?: string;
 }
 

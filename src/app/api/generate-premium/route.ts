@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { aiKeyManager } from '@/utils/apiManager'; // Import sistem rotasi kita
+import { aiKeyManager } from '../../../utils/apiManager'; // Import sistem rotasi kita
 
 export async function POST(request: Request) {
   try {
