@@ -93,16 +93,18 @@ function buildPrompt(
   resultId: string
 ): string {
   const resultContext = resultId !== "Unknown"
-    ? (lang === "en" ? `The user's specific test result is: ${resultId}. Anchor your analysis deeply to this result.` :
-       lang === "es" ? `El resultado de la prueba es: ${resultId}. Ancla tu análisis fuertemente en este resultado.` :
-       `Hasil tes spesifik pengguna: ${resultId}. Berakar kuatlah pada hasil ini dalam analisis Anda.`)
+    ? (lang === "en"
+        ? `The user's specific test result is: ${resultId}. Ignore common stereotypes—dive straight into the hidden inner conflict or unique talent that arises from this result.`
+        : lang === "es"
+        ? `El resultado de la prueba es: ${resultId}. Ignora los estereotipos comunes: sumérgete directamente en el conflicto interno oculto o el talento único que surge de este resultado.`
+        : `Hasil tes spesifik: ${resultId}. Abaikan stereotip umum—langsung tuju konflik batin tersembunyi atau bakat unik yang muncul dari hasil ini.`)
     : "";
 
   const toneInstruction = lang === "en"
-    ? `Write as an elite metaphysical psychologist. Every sentence must deliver a surprising, actionable insight. NO filler, NO "based on your name", NO generic advice. Be razor-sharp, even controversial if true. Output pure HTML: only <h3> for the title and <p> for paragraphs. Use <strong> for key phrases. Strictly 180-250 words.`
+    ? `Write as an elite metaphysical psychologist. Every sentence must deliver a shocking, actionable insight. NO filler, NO "based on your name", NO generic zodiac traits like "as an Aries you are...". Instead, reveal a blind spot or hidden gift that even the client hasn't noticed. Be razor‑sharp, even controversial if true. Output raw HTML: only <h3> for the title and <p> for paragraphs. Use <strong> for key phrases. Strictly 180‑250 words.`
     : lang === "es"
-    ? `Escribe como psicólogo metafísico de élite. Cada oración debe entregar una visión sorprendente y accionable. SIN relleno, SIN "basado en tu nombre", SIN consejos genéricos. Sé filoso, incluso controversial si es verdad. HTML puro: solo <h3> para el título y <p>. Usa <strong> para frases clave. Estrictamente 180-250 palabras.`
-    : `Tulislah sebagai psikolog metafisika elit. Setiap kalimat harus memberikan insight mengejutkan dan langsung bisa dieksekusi. TANPA basa-basi, TANPA "berdasarkan nama Anda", TANPA nasihat generik. Tajam, bahkan kontroversial jika memang benar. Output HTML murni: hanya <h3> untuk judul dan <p>. Gunakan <strong> untuk frasa kunci. Ketat 180-250 kata.`;
+    ? `Escribe como psicólogo metafísico de élite. Cada oración debe entregar una visión impactante y accionable. SIN relleno, SIN "basado en tu nombre", SIN rasgos genéricos del zodíaco como "como Aries eres...". Revela un punto ciego o un don oculto que ni el cliente ha notado. Sé filoso, incluso controversial si es verdad. HTML puro: solo <h3> para el título y <p>. Usa <strong> para frases clave. Estrictamente 180‑250 palabras.`
+    : `Tulislah sebagai psikolog metafisika elit. Setiap kalimat harus memberikan insight mengejutkan dan langsung bisa dieksekusi. TANPA basa‑basi, TANPA "berdasarkan nama Anda", TANPA sifat generik zodiak seperti "sebagai Aries Anda...". Sebaliknya, ungkap blind spot atau bakat terpendam yang bahkan klien sendiri tidak sadari. Tajam, bahkan kontroversial jika benar. Output HTML murni: hanya <h3> untuk judul dan <p>. Gunakan <strong> untuk frasa kunci. Ketat 180‑250 kata.`;
 
   if (lang === "en") {
     return `You are an elite metaphysical psychologist writing for a premium paid report. User: ${userName}, Tool: ${toolName}. ${resultContext}
@@ -118,7 +120,6 @@ Fokus bab: "${chapterTitle}". ${toneInstruction}
 Mulai langsung dengan <h3>${chapterTitle}</h3> diikuti analisis tajam Anda.`;
   }
 }
-
 // ---------- FETCH DENGAN RETRY & ROTASI KUNCI (GROQ) ----------
 async function fetchChapterWithRetry(
   chapterIndex: number,
