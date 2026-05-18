@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     // Inisialisasi Snap Midtrans (Gunakan Key dari .env yang SAMA dengan LatihanOnline)
     let snap = new midtransClient.Snap({
-      isProduction: false, // Ubah ke true jika sudah siap di production
+      isProduction: true, // Ubah ke true jika sudah siap di production
       serverKey: process.env.MIDTRANS_SERVER_KEY,
       clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
     });
