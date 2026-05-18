@@ -83,7 +83,6 @@ function getStaticChapters(lang: string, userName: string, resultId: string): { 
   }));
 }
 
-// ---------- PROMPT AI PREMIUM ----------
 function buildPrompt(
   chapterTitle: string,
   chapterDesc: string,
@@ -94,17 +93,35 @@ function buildPrompt(
 ): string {
   const resultContext = resultId !== "Unknown"
     ? (lang === "en"
-        ? `The user's specific test result is: ${resultId}. Ignore common stereotypes—dive straight into the hidden inner conflict or unique talent that arises from this result.`
+        ? `The user's specific test result is: ${resultId}. Ignore all generic interpretations—dive directly into a hidden psychological conflict or an unrecognized talent that arises from this result.`
         : lang === "es"
-        ? `El resultado de la prueba es: ${resultId}. Ignora los estereotipos comunes: sumérgete directamente en el conflicto interno oculto o el talento único que surge de este resultado.`
-        : `Hasil tes spesifik: ${resultId}. Abaikan stereotip umum—langsung tuju konflik batin tersembunyi atau bakat unik yang muncul dari hasil ini.`)
+        ? `El resultado de la prueba es: ${resultId}. Ignora todas las interpretaciones genéricas—ve directo al conflicto psicológico oculto o talento no reconocido que surge de este resultado.`
+        : `Hasil tes spesifik: ${resultId}. Abaikan SEMUA interpretasi generik—langsung tuju konflik psikologis tersembunyi atau bakat yang tidak disadari yang muncul dari hasil ini.`)
     : "";
 
   const toneInstruction = lang === "en"
-    ? `Write as an elite metaphysical psychologist. Every sentence must deliver a shocking, actionable insight. NO filler, NO "based on your name", NO generic zodiac traits like "as an Aries you are...". Instead, reveal a blind spot or hidden gift that even the client hasn't noticed. Be razor‑sharp, even controversial if true. Output raw HTML: only <h3> for the title and <p> for paragraphs. Use <strong> for key phrases. Strictly 180‑250 words.`
+    ? `You are an elite metaphysical psychologist known for SHOCKINGLY ACCURATE and BRUTALLY HONEST analysis. 
+RULES:
+- Every sentence must be a psychological diagnosis or a specific prediction (age, month, number, or concrete event).
+- ZERO motivational quotes, ZERO generic financial advice, ZERO personal development clichés.
+- Include at least ONE surprising, counter‑intuitive statement that the client will feel is uniquely about them.
+- Use <strong> for ALL key diagnostic terms.
+- Output pure HTML: <h3> for title, <p> for paragraphs. Strictly 180‑250 words.`
     : lang === "es"
-    ? `Escribe como psicólogo metafísico de élite. Cada oración debe entregar una visión impactante y accionable. SIN relleno, SIN "basado en tu nombre", SIN rasgos genéricos del zodíaco como "como Aries eres...". Revela un punto ciego o un don oculto que ni el cliente ha notado. Sé filoso, incluso controversial si es verdad. HTML puro: solo <h3> para el título y <p>. Usa <strong> para frases clave. Estrictamente 180‑250 palabras.`
-    : `Tulislah sebagai psikolog metafisika elit. Setiap kalimat harus memberikan insight mengejutkan dan langsung bisa dieksekusi. TANPA basa‑basi, TANPA "berdasarkan nama Anda", TANPA sifat generik zodiak seperti "sebagai Aries Anda...". Sebaliknya, ungkap blind spot atau bakat terpendam yang bahkan klien sendiri tidak sadari. Tajam, bahkan kontroversial jika benar. Output HTML murni: hanya <h3> untuk judul dan <p>. Gunakan <strong> untuk frasa kunci. Ketat 180‑250 kata.`;
+    ? `Eres un psicólogo metafísico de élite conocido por análisis SORPRENDENTEMENTE PRECISOS y BRUTALMENTE HONESTOS.
+REGLAS:
+- Cada oración debe ser un diagnóstico psicológico o una predicción específica (edad, mes, número, evento concreto).
+- CERO frases motivacionales, CERO consejos financieros genéricos, CERO clichés de desarrollo personal.
+- Incluye al menos una declaración contraintuitiva y sorprendente que el cliente sienta que es exclusivamente sobre él.
+- Usa <strong> para TODOS los términos clave del diagnóstico.
+- HTML puro: <h3> para título, <p> para párrafos. Estrictamente 180‑250 palabras.`
+    : `Anda adalah psikolog metafisika elit yang dikenal dengan analisis yang SANGAT AKURAT dan JUJUR tanpa basa‑basi.
+ATURAN:
+- Setiap kalimat HARUS berupa diagnosis psikologis atau prediksi spesifik (usia, bulan, angka, kejadian nyata).
+- DILARANG KERAS memberikan kata‑kata motivasi, nasihat keuangan umum, atau klise pengembangan diri.
+- Sertakan minimal SATU pernyataan mengejutkan dan kontra‑intuitif yang membuat klien merasa “ini benar‑benar tentang saya”.
+- Gunakan <strong> untuk SEMUA istilah kunci diagnosis.
+- Output HTML murni: <h3> untuk judul, <p> untuk paragraf. Ketat 180‑250 kata.`;
 
   if (lang === "en") {
     return `You are an elite metaphysical psychologist writing for a premium paid report. User: ${userName}, Tool: ${toolName}. ${resultContext}
@@ -148,12 +165,15 @@ async function fetchChapterWithRetry(
           "Authorization": `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", // model gratis Groq
+          model: "llama-3.1-8b-instant", // model gratis Groq
           messages: [
-            { role: "system", content: "You are a helpful metaphysical psychologist. Output raw HTML as instructed." },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.7,
+  { 
+    role: "system", 
+    content: "Anda adalah psikolog metafisika tajam. Setiap respons adalah diagnosis dingin yang mengejutkan, TANPA basa‑basi, TANPA motivasi. Langsung tunjuk konflik tersembunyi atau prediksi mengejutkan." 
+  },
+  { role: "user", content: prompt }
+]
+          temperature: 0.95,
           max_tokens: 600
         })
       });
