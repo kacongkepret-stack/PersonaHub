@@ -1,83 +1,91 @@
+// src/lib/reportEngine.ts
+// Tidak ada import prisma karena tidak digunakan
+
 const rawKeys = process.env.AI_API_KEYS || "";
 const API_KEYS = rawKeys.split(",").map(key => key.trim()).filter(Boolean);
 
-// ---------- STATIC FALLBACK (per bab, berdasarkan bahasa dan tier) ----------
+// ---------- STATIC FALLBACK (dengan placeholder {userName} dan {resultId}) ----------
 const staticChapters = {
   en: [
     {
       title: "Chapter 1: Authentic Character Blueprint",
-      content: `<p>Your dominant archetype is the <strong>Visionary Strategist</strong>. You see patterns others miss and are driven by a hunger for meaning. Your fatal flaw is over-idealism: you often expect others to operate at your level of integrity. Lucky colors: Deep Navy & Gold. Power number: 7.</p>`
+      content: `<p>{userName}, based on your name vibration and test result <strong>{resultId}</strong>, your dominant archetype is the <strong>Visionary Strategist</strong>—a rare type found in only 2.3% of the population. You naturally detect hidden patterns and are driven by a hunger for meaning. Your fatal flaw: over-idealism, which often leads to disappointment when others don't match your integrity. Empowering colors: Deep Navy (focus) & Gold (authority). Personal power number: 7—use it for important dates.</p>`
     },
     {
       title: "Chapter 2: 5-Year Financial Map",
-      content: `<p>Your wealth window opens in years 2-3, peaking at age 31-33. Best sectors: AI ethics, education technology, sustainable energy. Avoid leveraged speculation. Save 30% of windfalls. Lucky numbers: 4, 11, 22. Your financial guardian is your ability to connect abstract ideas to human needs.</p>`
+      content: `<p>Your wealth window, {userName}, opens wide in years 2–3, peaking at age 31–33. Your name energy aligns with <strong>ethical technology</strong>, <strong>digital education</strong>, and <strong>sustainable energy</strong>. Avoid leveraged speculation; your true asset is your ability to connect abstract ideas to human needs. Emergency fund: save 30% of windfalls. Lucky transaction numbers: 4, 11, 22.</p>`
     },
     {
       title: "Chapter 3: Soulmate & Relationship Secrets",
-      content: `<p>Highest compatibility: individuals with life path 7, 9, or 11. They will calm your restless mind. Danger zones: partners who dismiss your need for solitude. Thursday evenings are your strongest bonding window. Colors to wear on dates: soft grey & teal.</p>`
+      content: `<p>Highest compatibility: life paths 7, 9, or 11—they calm your restless mind. Danger zone: partners who dismiss your need for solitude. Thursday evenings are your strongest bonding window. Colors to wear on dates: soft grey & teal.</p>`
     },
     {
       title: "Chapter 4: Life Danger Warnings",
-      content: `<p>Your biggest trap is trusting charisma over evidence. Never enter verbal agreements; document everything. Risky months: March & October. Physical warning signs: sharp headaches before major betrayals. Avoid any investment promising "quick, guaranteed returns" – they are your kryptonite.</p>`
+      content: `<p>Your biggest trap, {userName}, is trusting charisma over evidence. Never rely on verbal agreements; document everything. Risky months: March & October. Physical warning sign: sharp headaches before major betrayals. Avoid any investment promising "quick, guaranteed returns"—they are your kryptonite.</p>`
     },
     {
       title: "Chapter 5: Success Execution Strategy",
-      content: `<p>For 30 days: (1) Wake 40 min earlier and write one page of raw thought – this unblocks your subconscious genius. (2) Cut one toxic relationship, even if it's just emotional distance. (3) Learn one monetizable skill via deep practice (4 hours/week). Your mantra: "Depth over distraction."</p>`
+      content: `<p>For the next 30 days: (1) Wake 40 min earlier and write one page of raw thought—this unblocks your subconscious genius. (2) Cut one toxic relationship, even if it's just emotional distance. (3) Learn one monetizable skill through deep practice (4 hours/week). Your mantra: "Depth over distraction."</p>`
     }
   ],
   es: [
     {
       title: "Capítulo 1: Plano del Carácter Auténtico",
-      content: `<p>Tu arquetipo dominante es el <strong>Estratega Visionario</strong>. Ves patrones ocultos y te impulsa una necesidad de significado. Tu punto débil: el idealismo excesivo. Colores de suerte: Azul Marino y Dorado. Número de poder: 7.</p>`
+      content: `<p>{userName}, según la vibración de tu nombre y el resultado <strong>{resultId}</strong>, tu arquetipo dominante es el <strong>Estratega Visionario</strong>, un tipo raro (2.3% de la población). Detectas patrones ocultos y te mueve la necesidad de significado. Tu punto débil: idealismo excesivo. Colores de poder: Azul Marino (enfoque) y Dorado (autoridad). Número personal de poder: 7.</p>`
     },
     {
       title: "Capítulo 2: Mapa Financiero a 5 Años",
-      content: `<p>Tu ventana de riqueza se abre en los años 2-3, con pico a los 31-33 años. Sectores ideales: tecnología ética, educación digital. Evita la especulación. Ahorra el 30% de ingresos inesperados. Números de suerte: 4, 11, 22.</p>`
+      content: `<p>Tu ventana de riqueza se abre en los años 2–3, con pico a los 31–33 años. Tu energía se alinea con <strong>tecnología ética</strong>, <strong>educación digital</strong> y <strong>energía sostenible</strong>. Evita la especulación; tu mayor activo es conectar ideas abstractas con necesidades humanas. Fondo de emergencia: 30% de ingresos inesperados. Números de suerte: 4, 11, 22.</p>`
     },
     {
       title: "Capítulo 3: Secretos de Pareja",
-      content: `<p>Compatibilidad máxima: caminos de vida 7, 9 o 11. Calma tu mente inquieta. Riesgo: parejas que no respetan tu necesidad de soledad. Ventana de conexión: jueves al atardecer. Colores para citas: gris suave y verde azulado.</p>`
+      content: `<p>Compatibilidad máxima: caminos de vida 7, 9 o 11—calman tu mente inquieta. Riesgo: parejas que no respetan tu necesidad de soledad. Ventana de conexión: jueves al atardecer. Colores para citas: gris suave y verde azulado.</p>`
     },
     {
       title: "Capítulo 4: Advertencias de Peligro",
-      content: `<p>Tu mayor trampa es confiar en el carisma sin evidencia. Nunca acuerdos verbales; documento todo. Meses riesgosos: marzo y octubre. Señal física: dolores de cabeza agudos antes de traiciones. Evita inversiones con promesas "rápidas y garantizadas".</p>`
+      content: `<p>Tu mayor trampa, {userName}, es confiar en el carisma sin evidencia. Nunca hagas acuerdos verbales; documenta todo. Meses de riesgo: marzo y octubre. Señal física: dolores de cabeza agudos antes de traiciones. Evita inversiones que prometan "ganancias rápidas y seguras".</p>`
     },
     {
       title: "Capítulo 5: Estrategia de Éxito",
-      content: `<p>Durante 30 días: (1) Levántate 40 min antes y escribe una página de pensamiento en bruto. (2) Corta una relación tóxica. (3) Aprende una habilidad monetizable con práctica profunda. Mantra: "Profundidad sobre distracción".</p>`
+      content: `<p>Próximos 30 días: (1) Levántate 40 min antes y escribe una página de pensamiento en bruto. (2) Corta una relación tóxica. (3) Aprende una habilidad monetizable con práctica profunda. Mantra: "Profundidad sobre distracción".</p>`
     }
   ],
   id: [
     {
       title: "Bab 1: Blueprint Karakter Asli",
-      content: `<p>Arketipe dominan Anda adalah <strong>Sang Visioner Strategis</strong>. Anda melihat pola yang terlewat orang lain dan digerakkan oleh dahaga makna. Kelemahan fatal: terlalu idealis dan mengharapkan orang lain sejujur Anda. Warna keberuntungan: Biru Dongker & Emas. Angka kekuatan: 7.</p>`
+      content: `<p>{userName}, berdasarkan vibrasi nama dan hasil tes <strong>{resultId}</strong>, arketipe dominan Anda adalah <strong>Sang Visioner Strategis</strong>—tipe langka yang hanya dimiliki 2.3% populasi. Anda secara alami melihat pola tersembunyi dan digerakkan oleh dahaga makna. Kelemahan fatal: terlalu idealis dan sering kecewa saat orang lain tidak sejalan dengan integritas Anda. Warna penguat: Biru Dongker (fokus) & Emas (otoritas). Angka kekuatan pribadi: 7—gunakan untuk menentukan tanggal penting.</p>`
     },
     {
       title: "Bab 2: Peta Keuangan 5 Tahun",
-      content: `<p>Jendela rezeki terbuka di tahun ke-2 hingga 3, puncak pada usia 31-33. Sektor terbaik: teknologi etis, pendidikan digital, energi berkelanjutan. Hindari spekulasi. Simpan 30% dana tak terduga. Angka hoki: 4, 11, 22.</p>`
+      content: `<p>Jendela rezeki Anda, {userName}, terbuka lebar di tahun ke-2 hingga ke-3, dengan puncak finansial di usia 31–33. Energi nama Anda selaras dengan sektor <strong>teknologi etis</strong>, <strong>pendidikan digital</strong>, dan <strong>energi berkelanjutan</strong>. Hindari spekulasi; justru kemampuan Anda menghubungkan ide abstrak dengan kebutuhan manusia adalah aset utama. Dana darurat: simpan 30% dari setiap pemasukan tak terduga. Angka hoki transaksi: 4, 11, 22.</p>`
     },
     {
       title: "Bab 3: Rahasia Jodoh & Hubungan",
-      content: `<p>Kecocokan tertinggi: mereka dengan angka kehidupan 7, 9, atau 11. Mereka mampu menenangkan pikiran Anda yang tak pernah berhenti. Zona bahaya: pasangan yang meremehkan kebutuhan Anda akan kesendirian. Momen bonding terkuat: Kamis petang. Warna saat kencan: abu-abu lembut & teal.</p>`
+      content: `<p>Kecocokan tertinggi: mereka dengan angka kehidupan 7, 9, atau 11—merekalah yang mampu menenangkan pikiran Anda yang tak pernah berhenti. Zona bahaya: pasangan yang meremehkan kebutuhan Anda akan kesendirian. Momen bonding terkuat: Kamis petang. Warna saat kencan: abu-abu lembut & teal.</p>`
     },
     {
       title: "Bab 4: Peringatan Bahaya Hidup",
-      content: `<p>Jebakan terbesar: memercayai karisma tanpa bukti. Jangan pernah buat perjanjian lisan; catat semuanya. Bulan rawan: Maret & Oktober. Tanda fisik: sakit kepala tajam sebelum pengkhianatan besar. Hindari investasi berjanji "cepat dan pasti untung" – itu racun Anda.</p>`
+      content: `<p>Jebakan terbesar Anda, {userName}, adalah memercayai karisma tanpa bukti. Jangan pernah buat perjanjian lisan; catat semuanya. Bulan rawan: Maret & Oktober. Tanda fisik: sakit kepala tajam sebelum pengkhianatan besar. Hindari investasi berjanji "cepat dan pasti untung"—itu racun Anda.</p>`
     },
     {
       title: "Bab 5: Strategi Sukses Eksekusi",
-      content: `<p>Selama 30 hari: (1) Bangun 40 menit lebih awal dan tulis satu halaman pikiran mentah – ini membuka genius bawah sadar. (2) Putuskan satu hubungan beracun, walau hanya jarak emosional. (3) Pelajari satu skill menghasilkan melalui latihan mendalam 4 jam/minggu. Mantra: "Kedalaman di atas gangguan."</p>`
+      content: `<p>Selama 30 hari ke depan: (1) Bangun 40 menit lebih awal dan tulis satu halaman pikiran mentah—ini membuka genius bawah sadar. (2) Putuskan satu hubungan beracun, walau hanya jarak emosional. (3) Pelajari satu skill menghasilkan melalui latihan mendalam (4 jam/minggu). Mantra: "Kedalaman di atas gangguan."</p>`
     }
   ]
 };
 
-function getStaticChapters(lang: string): { title: string; content: string }[] {
-  if (lang === 'en') return staticChapters.en;
-  if (lang === 'es') return staticChapters.es;
-  return staticChapters.id;
+// ---------- FUNGSI PENGAMBIL STATIC DENGAN PERSONALISASI ----------
+function getStaticChapters(lang: string, userName: string, resultId: string): { title: string; content: string }[] {
+  const source = staticChapters[lang as keyof typeof staticChapters] || staticChapters.id;
+  return source.map(ch => ({
+    ...ch,
+    content: ch.content
+      .replace(/\{userName\}/g, userName)
+      .replace(/\{resultId\}/g, resultId)
+  }));
 }
 
-// ---------- PROMPT AI TERCANGGIH, PADAT, DAN BERDAMPAK ----------
+// ---------- PROMPT AI PREMIUM ----------
 function buildPrompt(
   chapterTitle: string,
   chapterDesc: string,
@@ -87,13 +95,13 @@ function buildPrompt(
   resultId: string
 ): string {
   const resultContext = resultId !== "Unknown"
-    ? (lang === "en" ? `The user's specific test result is: ${resultId}. Your analysis must be directly anchored to this result.` :
-       lang === "es" ? `El resultado de la prueba es: ${resultId}. Ancla tu análisis directamente en este resultado.` :
-       `Hasil tes spesifik pengguna: ${resultId}. Analisis Anda harus berakar kuat pada hasil ini.`)
+    ? (lang === "en" ? `The user's specific test result is: ${resultId}. Anchor your analysis deeply to this result.` :
+       lang === "es" ? `El resultado de la prueba es: ${resultId}. Ancla tu análisis fuertemente en este resultado.` :
+       `Hasil tes spesifik pengguna: ${resultId}. Berakar kuatlah pada hasil ini dalam analisis Anda.`)
     : "";
 
   const toneInstruction = lang === "en"
-    ? `Write as an elite metaphysical psychologist. Every sentence must deliver a surprising, actionable insight. NO filler, NO "based on your name", NO generic life advice. Be razor-sharp, even controversial if true. Output pure HTML: only <h3> for the title and <p> for paragraphs. Use <strong> for key phrases. Strictly 180-250 words.`
+    ? `Write as an elite metaphysical psychologist. Every sentence must deliver a surprising, actionable insight. NO filler, NO "based on your name", NO generic advice. Be razor-sharp, even controversial if true. Output pure HTML: only <h3> for the title and <p> for paragraphs. Use <strong> for key phrases. Strictly 180-250 words.`
     : lang === "es"
     ? `Escribe como psicólogo metafísico de élite. Cada oración debe entregar una visión sorprendente y accionable. SIN relleno, SIN "basado en tu nombre", SIN consejos genéricos. Sé filoso, incluso controversial si es verdad. HTML puro: solo <h3> para el título y <p>. Usa <strong> para frases clave. Estrictamente 180-250 palabras.`
     : `Tulislah sebagai psikolog metafisika elit. Setiap kalimat harus memberikan insight mengejutkan dan langsung bisa dieksekusi. TANPA basa-basi, TANPA "berdasarkan nama Anda", TANPA nasihat generik. Tajam, bahkan kontroversial jika memang benar. Output HTML murni: hanya <h3> untuk judul dan <p>. Gunakan <strong> untuk frasa kunci. Ketat 180-250 kata.`;
@@ -113,7 +121,7 @@ Mulai langsung dengan <h3>${chapterTitle}</h3> diikuti analisis tajam Anda.`;
   }
 }
 
-// ---------- FETCH DENGAN RETRY & ROTASI KUNCI (PARALEL-READY) ----------
+// ---------- FETCH DENGAN RETRY & ROTASI KUNCI (PARALEL) ----------
 async function fetchChapterWithRetry(
   chapterIndex: number,
   totalChapters: number,
@@ -128,7 +136,6 @@ async function fetchChapterWithRetry(
 
   let attempt = 0;
   const maxRetries = 5;
-  // Rotasi kunci berdasarkan chapter index + attempt
   while (attempt < maxRetries) {
     const keyIndex = (chapterIndex + attempt) % API_KEYS.length;
     const apiKey = API_KEYS[keyIndex];
@@ -149,7 +156,7 @@ async function fetchChapterWithRetry(
         const msg = data.error.message || "";
         if (msg.includes("high demand") || msg.includes("quota") || msg.includes("rate")) {
           attempt++;
-          await new Promise(r => setTimeout(r, 2000)); // tunggu 2 detik sebelum retry
+          await new Promise(r => setTimeout(r, 2000));
           continue;
         }
         return null;
@@ -169,15 +176,15 @@ async function fetchChapterWithRetry(
   return null;
 }
 
-// ---------- FUNGSI UTAMA (PARALEL, TIERING, FALLBACK) ----------
+// ---------- FUNGSI UTAMA (PARALEL, TIERING, FALLBACK PERSONAL) ----------
 export async function generatePremiumReport(
   userName: string,
   toolName: string,
   lang: string = "id",
   resultId: string = "Unknown",
   tier: string = "premium"
-) {
-  // Definisi bab (judul + deskripsi untuk prompt)
+): Promise<string> {
+  // Definisi bab
   const allChapters = [
     { 
       title: lang === "en" ? "Chapter 1: Authentic Character Blueprint" : lang === "es" ? "Capítulo 1: Plano del Carácter Auténtico" : "Bab 1: Blueprint Karakter Asli",
@@ -211,20 +218,17 @@ export async function generatePremiumReport(
     )
   );
 
-  // Ambil konten statis sebagai fallback per bab (sesuai bahasa)
-  const staticChaptersList = getStaticChapters(lang);
-  // Potong static sesuai tier juga
+  // Ambil konten statis yang sudah dipersonalisasi
+  const staticChaptersList = getStaticChapters(lang, userName, resultId);
   const targetStatic = tier === "basic" ? staticChaptersList.slice(0, 2) : staticChaptersList;
 
-  // Gabungkan: jika AI sukses pakai AI, jika tidak pakai static chapter yang sesuai
+  // Gabungkan: AI sukses -> pakai AI, gagal -> pakai static yang sudah ada nama
   const finalChapters = targetChapters.map((ch, i) => {
-    if (aiResults[i]) return aiResults[i]!;
-    // Fallback: gunakan konten statis untuk bab ini (indeks sama)
+    if (aiResults[i]) return aiResults[i];
     const fallback = targetStatic[i];
     if (fallback) {
       return `<h3>${fallback.title}</h3>${fallback.content}`;
     }
-    // Jika tidak ada, berikan placeholder (seharusnya tidak terjadi)
     return `<h3>${ch.title}</h3><p>${lang === "en" ? "Insight temporarily unavailable." : lang === "es" ? "Información no disponible temporalmente." : "Wawasan sementara tidak tersedia."}</p>`;
   });
 
